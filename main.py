@@ -1,17 +1,11 @@
-from fastapi import FastAPI, UploadFile
 import torch
 from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
-import time
 import os
 from dotenv import load_dotenv
-from module_file import save_file
-import asyncio
-from typing import AsyncIterator
+from module_broker import BrokerClient
 
 
 load_dotenv()
-is_delete_after_processing = (os.getenv('WHISPER_IS_DELETE_AFTER_PROCESSING', 'False')
-                              .lower() in ('true', '1', 'yes'))
 upload_folder = 'incoming_files'
 
 if torch.cuda.is_available():
@@ -47,38 +41,15 @@ pipe = pipeline(
     generate_kwargs={"language": "en", "suppress_tokens": []}
 )
 
-app = FastAPI()
 
-
-async def transcribe_file(file):
-    file_path = await save_file(file, upload_folder)
-
-    start_time = time.time()
-
-    result = pipe(file_path)  # Transcribe file
-    print(f"File {file.filename} was transcribed.")
-
-    execution_time = round((time.time() - start_time), 2)
-
-    # TODO save TranscribedRecord output_file_path = os.path.join(output_folder, f"{filename}.mp")
-
-    if is_delete_after_processing:
-        os.remove(file_path)  # Delete file after processing
-
-    return result, execution_time
-
-
-@app.post("/upload/")
-async def upload_file(file: UploadFile):
-    try:
-        result, execution_time = await transcribe_file(file)
-        return {"TranscribedRecord": result["text"], "executionTime": f"{execution_time} sec"}
-    except Exception as e:
-        return {"Error": str(e)}
+# def main():
+try:
+    queue_name = "converted_files_queue"
+    broker_client = BrokerClient(queue_name, pipe)
+    broker_client.receive_message()
+except Exception as e:
+    print(f"Status: Error: {str(e)}")
 
 
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8005)
-
-# TODO add Rabbit<Q
+    main()

@@ -58,6 +58,16 @@ class BrokerClient:
 
     def __callback(self, ch, method, properties, body):
         print(f"Received: {body.decode()}")
-        file_path = body.decode()
+
+        # if app runs on the local host switch folder
+        if self.__broker_host == '127.0.0.1':
+            file_folder = os.getenv('CONVERTER_FOLDER_CONVERTED_FILES')
+            file_name = os.path.basename(body.decode())
+            file_path = os.path.join(file_folder, file_name)
+            file_path = os.path.abspath(file_path)  # Get full path
+            print(file_path)
+        else:
+            file_path = body.decode()
+
         transcribe_client = Transcriber(file_path, self.__pipe)
         transcribe_client.transcribe_file()

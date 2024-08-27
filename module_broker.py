@@ -1,73 +1,66 @@
-import pika
+import asyncio
+import aio_pika
+import aio_pika.abc
 import os
 from dotenv import load_dotenv
 from module_transcriber import Transcriber
 
 
 class BrokerClient:
-    def __init__(self, queue_name, pipe):
+    def __init__(self, queue_name, pipe, loop):
         self.__queue_name = queue_name
         self.__pipe = pipe
+        self.__loop = loop
         #  Load environment variables from .env file
         self.__broker_host = os.getenv('MESSAGE_BROKER_HOST', '127.0.0.1')
-        __broker_login = os.getenv('MESSAGE_BROKER_LOGIN')
-        __broker_password = os.getenv('MESSAGE_BROKER_PASSWORD')
-        self.__credentials = pika.PlainCredentials(__broker_login, __broker_password)
+        self.__broker_login = os.getenv('MESSAGE_BROKER_LOGIN')
+        self.__broker_password = os.getenv('MESSAGE_BROKER_PASSWORD')
 
-    def __connect_to_broker(self):
+    async def __connect_to_broker(self):
         # Establishing a connection to RabbitMQ
-        connection = pika.BlockingConnection(
-            pika.ConnectionParameters(host=self.__broker_host,
-                                      port=5672,
-                                      virtual_host='/',
-                                      credentials=self.__credentials)
+        connection = await aio_pika.connect_robust(
+            host=self.__broker_host,
+            port=5672,
+            virtualhost='/',
+            login=self.__broker_login,
+            password=self.__broker_password,
+            loop=self.__loop
         )
+        return connection
 
-        channel = connection.channel()
+    async def receive_message(self):
+        connection = await self.__connect_to_broker()
+        async with connection:
+            queue_name = self.__queue_name
 
-        # Create a queue if it doesn't exist
-        channel.queue_declare(queue=self.__queue_name, durable=True)
+            # Creating channel
+            channel: aio_pika.abc.AbstractChannel = await connection.channel()
 
-        return channel, connection
-
-    def publish_message(self, message):
-        channel, connection = self.__connect_to_broker()
-
-        # Sending a message to the queue
-        channel.basic_publish(
-            exchange='',
-            routing_key=self.__queue_name,
-            body=message,
-            properties=pika.BasicProperties(
-                delivery_mode=2,  # The message will be saved to disk.
+            # Declaring queue
+            queue: aio_pika.abc.AbstractQueue = await channel.declare_queue(
+                queue_name,
+                auto_delete=False,
+                durable=True
             )
-        )
 
-        connection.close()
+            async with queue.iterator() as queue_iter:
+                # Cancel consuming after __aexit__
+                async for message in queue_iter:
+                    async with message.process():
+                        print(f"Received: {message.body.decode()}")
 
-    def receive_message(self):
-        channel, connection = self.__connect_to_broker()
+                        # if app runs on the local host switch folder
+                        if self.__broker_host == '127.0.0.1':
+                            file_folder = os.getenv('CONVERTER_FOLDER_CONVERTED_FILES')
+                            file_name = os.path.basename(message.body.decode())
+                            file_path = os.path.join(file_folder, file_name)
+                            file_path = os.path.abspath(file_path)  # Get full path
+                            print(file_path)
+                        else:
+                            file_path = message.body.decode()
 
-        # Set up a callback function to handle messages
-        channel.basic_consume(
-            queue=self.__queue_name,
-            on_message_callback=self.__callback,
-            auto_ack=True  # Automatic confirmation of receipt of messages
-        )
-        channel.start_consuming()
+                        transcribe_client = Transcriber(file_path, self.__pipe)
+                        await transcribe_client.transcribe_file()
 
-    def __callback(self, ch, method, properties, body):
-        print(f"Received: {body.decode()}")
-
-        # if app runs on the local host switch folder
-        if self.__broker_host == '127.0.0.1':
-            file_folder = os.getenv('CONVERTER_FOLDER_CONVERTED_FILES')
-            file_name = os.path.basename(body.decode())
-            file_path = os.path.join(file_folder, file_name)
-            file_path = os.path.abspath(file_path)  # Get full path
-            print(file_path)
-        else:
-            file_path = body.decode()
-
-        transcribe_client = Transcriber(file_path, self.__pipe)
-        transcribe_client.transcribe_file()
+                        if queue.name in message.body.decode():
+                            break

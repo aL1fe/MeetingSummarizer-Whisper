@@ -3,6 +3,9 @@ from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
 import os
 from dotenv import load_dotenv
 from module_broker import BrokerClient
+import asyncio
+import aio_pika
+import aio_pika.abc
 
 
 load_dotenv()
@@ -42,14 +45,16 @@ pipe = pipeline(
 )
 
 
-# def main():
-try:
-    queue_name = "converted_files_queue"
-    broker_client = BrokerClient(queue_name, pipe)
-    broker_client.receive_message()
-except Exception as e:
-    print(f"Status: Error: {str(e)}")
+async def main(loop):
+    try:
+        queue_name = "converted_files_queue"
+        broker_client = BrokerClient(queue_name, pipe, loop)
+        await broker_client.receive_message()
+    except Exception as e:
+        print(f"Status: Error: {str(e)}")
 
 
 if __name__ == "__main__":
-    main()
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main(loop))
+    loop.close()

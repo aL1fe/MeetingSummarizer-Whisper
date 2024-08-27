@@ -5,4 +5,4 @@ uvicorn
 ffmpeg-python
 python-multipart
 python-dotenv
-pika
+aio_pika

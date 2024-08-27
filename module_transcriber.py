@@ -7,7 +7,7 @@ class Transcriber:
         self.__file_path = file_path
         self.__pipe = pipe
 
-    async def transcribe_file(self):
+    def transcribe_file(self):
         start_time = time.time()
 
         result = self.__pipe(self.__file_path)  # Transcribe file

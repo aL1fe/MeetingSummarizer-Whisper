@@ -4,7 +4,18 @@ import time
 
 
 class Transcriber:
+    __instance = None
+    __initialized = False
+
+    def __new__(cls, *args, **kwargs):
+        if cls.__instance is None:
+            cls.__instance = super().__new__(cls)
+        return cls.__instance
+
     def __init__(self):
+        if Transcriber.__initialized:
+            return
+        Transcriber.__initialized = True
         if torch.cuda.is_available():
             device = "cuda:0"
             print("CUDA is available. Using GPU.")
@@ -37,6 +48,10 @@ class Transcriber:
             device=device,
             generate_kwargs={"language": "en", "suppress_tokens": []}
         )
+
+    def __del__(self):
+        Transcriber.__instance = None
+        print("Instance was deleted.")
 
     def transcribe_file(self, file_path):
         start_time = time.time()

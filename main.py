@@ -45,16 +45,14 @@ pipe = pipeline(
 )
 
 
-async def main(loop):
+async def main():
     try:
         queue_name = "converted_files_queue"
-        broker_client = BrokerClient(queue_name, pipe, loop)
+        broker_client = BrokerClient(queue_name, pipe)
         await broker_client.receive_message()
     except Exception as e:
         print(f"Status: Error: {str(e)}")
 
 
 if __name__ == "__main__":
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(main(loop))
-    loop.close()
+    asyncio.run(main())

@@ -7,10 +7,9 @@ from module_transcriber import Transcriber
 
 
 class BrokerClient:
-    def __init__(self, queue_name, pipe, loop):
+    def __init__(self, queue_name, pipe,):
         self.__queue_name = queue_name
         self.__pipe = pipe
-        self.__loop = loop
         #  Load environment variables from .env file
         self.__broker_host = os.getenv('MESSAGE_BROKER_HOST', '127.0.0.1')
         self.__broker_login = os.getenv('MESSAGE_BROKER_LOGIN')
@@ -23,8 +22,7 @@ class BrokerClient:
             port=5672,
             virtualhost='/',
             login=self.__broker_login,
-            password=self.__broker_password,
-            loop=self.__loop
+            password=self.__broker_password
         )
         return connection
 

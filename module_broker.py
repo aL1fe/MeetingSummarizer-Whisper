@@ -7,8 +7,9 @@ from module_transcriber import Transcriber
 
 
 class BrokerClient:
-    def __init__(self, queue_name):
+    def __init__(self, queue_name, transcribe_client):
         self.__queue_name = queue_name
+        self.__transcribe_client = transcribe_client
         #  Load environment variables from .env file
         load_dotenv()
         self.__broker_host = os.getenv('MESSAGE_BROKER_HOST', '127.0.0.1')
@@ -57,8 +58,7 @@ class BrokerClient:
                         else:
                             file_path = message.body.decode()
 
-                        transcribe_client = Transcriber()
-                        await asyncio.to_thread(transcribe_client.transcribe_file, file_path)
+                        await asyncio.to_thread(self.__transcribe_client.transcribe_file, file_path)
 
                         if queue.name in message.body.decode():
                             break

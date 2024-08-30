@@ -49,10 +49,6 @@ class Transcriber:
             generate_kwargs={"language": "en", "suppress_tokens": []}
         )
 
-    def __del__(self):
-        Transcriber.__instance = None
-        print("Instance was deleted.")
-
     def transcribe_file(self, file_path):
         start_time = time.time()
 

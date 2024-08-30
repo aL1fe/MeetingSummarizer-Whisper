@@ -2,28 +2,25 @@ import asyncio
 import aio_pika
 import aio_pika.abc
 import os
-from dotenv import load_dotenv
 from module_transcriber import Transcriber
+from module_config import ConfigManager
+from dotenv import load_dotenv
 
 
 class BrokerClient:
-    def __init__(self, queue_name, transcribe_client):
+    def __init__(self, app_config, queue_name, transcribe_client):
+        self.__app_config = app_config
         self.__queue_name = queue_name
         self.__transcribe_client = transcribe_client
-        #  Load environment variables from .env file
-        load_dotenv()
-        self.__broker_host = os.getenv('MESSAGE_BROKER_HOST', '127.0.0.1')
-        self.__broker_login = os.getenv('MESSAGE_BROKER_LOGIN')
-        self.__broker_password = os.getenv('MESSAGE_BROKER_PASSWORD')
 
     async def __connect_to_broker(self):
         # Establishing a connection to RabbitMQ
         connection = await aio_pika.connect_robust(
-            host=self.__broker_host,
+            host=self.__app_config.broker_host,
             port=5672,
             virtualhost='/',
-            login=self.__broker_login,
-            password=self.__broker_password
+            login=self.__app_config.broker_login,
+            password=self.__app_config.broker_password
         )
         return connection
 
@@ -49,8 +46,8 @@ class BrokerClient:
                         print(f"Received: {message.body.decode()}")
 
                         # if app runs on the local host switch folder
-                        if self.__broker_host == '127.0.0.1':
-                            file_folder = os.getenv('CONVERTER_FOLDER_CONVERTED_FILES')
+                        if self.__app_config.broker_host == '127.0.0.1':
+                            file_folder = self.__app_config.folder_with_converted_files
                             file_name = os.path.basename(message.body.decode())
                             file_path = os.path.join(file_folder, file_name)
                             file_path = os.path.abspath(file_path)  # Get full path

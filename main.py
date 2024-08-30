@@ -1,15 +1,15 @@
-import os
-from dotenv import load_dotenv
+import asyncio
 from module_broker import BrokerClient
 from module_transcriber import Transcriber
-import asyncio
+from module_config import ConfigManager
 
 
 async def main():
     try:
+        app_config = ConfigManager()
         queue_name = "converted_files_queue"
         transcribe_client = Transcriber()
-        broker_client = BrokerClient(queue_name, transcribe_client)
+        broker_client = BrokerClient(app_config, queue_name, transcribe_client)
         await broker_client.receive_message()
     except Exception as e:
         raise e

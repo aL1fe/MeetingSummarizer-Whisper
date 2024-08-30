@@ -4,7 +4,6 @@ import aio_pika.abc
 import os
 from module_transcriber import Transcriber
 from module_config import ConfigManager
-from dotenv import load_dotenv
 
 
 class BrokerClient:
@@ -55,7 +54,8 @@ class BrokerClient:
                         else:
                             file_path = message.body.decode()
 
-                        await asyncio.to_thread(self.__transcribe_client.transcribe_file, file_path)
+                        # await asyncio.to_thread(self.__transcribe_client.transcribe_file, file_path)
+                        await asyncio.create_task((self.__transcribe_client.transcribe_file(file_path)))
 
                         if queue.name in message.body.decode():
                             break

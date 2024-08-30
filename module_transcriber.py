@@ -49,7 +49,7 @@ class Transcriber:
             generate_kwargs={"language": "en", "suppress_tokens": []}
         )
 
-    def transcribe_file(self, file_path):
+    async def transcribe_file(self, file_path):
         start_time = time.time()
 
         result = self.__pipe(file_path)  # Transcribe file
@@ -59,5 +59,6 @@ class Transcriber:
         execution_time = round((time.time() - start_time), 2)
 
         # TODO save TranscribedRecord output_file_path = os.path.join(output_folder, f"{filename}.mp")
+        # Publish message to the broker queue
 
         return result, execution_time

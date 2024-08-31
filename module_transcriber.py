@@ -58,7 +58,4 @@ class Transcriber:
 
         execution_time = round((time.time() - start_time), 2)
 
-        # TODO save TranscribedRecord output_file_path = os.path.join(output_folder, f"{filename}.mp")
-        # Publish message to the broker queue
-
         return result, execution_time

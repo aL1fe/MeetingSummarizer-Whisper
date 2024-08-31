@@ -26,10 +26,8 @@ class BrokerClient:
         connection = await self.__connect_to_broker()
         async with connection:
             queue_name = self.__app_config.converted_files_queue
-
             # Creating channel
             channel: aio_pika.abc.AbstractChannel = await connection.channel()
-
             # Declaring queue
             queue: aio_pika.abc.AbstractQueue = await channel.declare_queue(
                 queue_name,
@@ -49,16 +47,37 @@ class BrokerClient:
                             file_name = os.path.basename(message.body.decode())
                             file_path = os.path.join(file_folder, file_name)
                             file_path = os.path.abspath(file_path)  # Get full path
-                            print(file_path)
                         else:
                             file_path = message.body.decode()
+                        print(file_path)
 
                         # await asyncio.to_thread(self.__transcribe_client.transcribe_file, file_path)
                         result, execution_time = await asyncio.create_task(
                             self.__transcribe_client.transcribe_file(file_path)
                         )
-                        print(result)
+                        print(result["text"])
                         print(execution_time)
+
+                        await self.publish_message(
+                            connection,
+                            self.__app_config.transcribed_files_queue,
+                            result["text"]
+                        )
 
                         if queue.name in message.body.decode():
                             break
+
+    async def publish_message(self, connection, queue_name, message):
+        channel: aio_pika.abc.AbstractChannel = await connection.channel()
+        # Declare a queue
+        queue: aio_pika.abc.AbstractQueue = await channel.declare_queue(
+            queue_name,
+            auto_delete=False,
+            durable=True
+        )
+        await channel.default_exchange.publish(
+            aio_pika.Message(
+                body=message.encode('utf-8')
+            ),
+            routing_key=queue_name
+        )

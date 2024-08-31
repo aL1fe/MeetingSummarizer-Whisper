@@ -2,6 +2,7 @@ from dotenv import load_dotenv
 import os
 
 
+# Singleton pattern
 class ConfigManager:
     __instance = None
     __initialized = False
@@ -19,3 +20,5 @@ class ConfigManager:
         self.broker_login = os.getenv('MESSAGE_BROKER_LOGIN')
         self.broker_password = os.getenv('MESSAGE_BROKER_PASSWORD')
         self.folder_with_converted_files = os.getenv('CONVERTER_FOLDER_CONVERTED_FILES')
+        self.converted_files_queue = os.getenv('CONVERTER_QUEUE_NAME')
+        self.transcribed_files_queue = os.getenv('WHISPER_QUEUE_NAME')

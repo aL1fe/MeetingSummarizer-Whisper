@@ -7,9 +7,8 @@ from module_config import ConfigManager
 
 
 class BrokerClient:
-    def __init__(self, app_config, queue_name, transcribe_client):
+    def __init__(self, app_config, transcribe_client):
         self.__app_config = app_config
-        self.__queue_name = queue_name
         self.__transcribe_client = transcribe_client
 
     async def __connect_to_broker(self):
@@ -26,7 +25,7 @@ class BrokerClient:
     async def receive_message(self):
         connection = await self.__connect_to_broker()
         async with connection:
-            queue_name = self.__queue_name
+            queue_name = self.__app_config.converted_files_queue
 
             # Creating channel
             channel: aio_pika.abc.AbstractChannel = await connection.channel()

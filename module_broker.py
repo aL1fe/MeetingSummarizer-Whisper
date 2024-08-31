@@ -55,7 +55,11 @@ class BrokerClient:
                             file_path = message.body.decode()
 
                         # await asyncio.to_thread(self.__transcribe_client.transcribe_file, file_path)
-                        await asyncio.create_task((self.__transcribe_client.transcribe_file(file_path)))
+                        result, execution_time = await asyncio.create_task(
+                            self.__transcribe_client.transcribe_file(file_path)
+                        )
+                        print(result)
+                        print(execution_time)
 
                         if queue.name in message.body.decode():
                             break

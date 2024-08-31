@@ -3,6 +3,7 @@ from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
 import time
 
 
+# Singleton pattern
 class Transcriber:
     __instance = None
     __initialized = False
@@ -53,7 +54,6 @@ class Transcriber:
         start_time = time.time()
 
         result = self.__pipe(file_path)  # Transcribe file
-        print(result)
         print(f"File was transcribed.")
 
         execution_time = round((time.time() - start_time), 2)

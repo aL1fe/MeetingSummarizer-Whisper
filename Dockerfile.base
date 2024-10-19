@@ -1,4 +1,5 @@
-FROM nvidia/cuda:12.5.1-cudnn-devel-ubuntu20.04
+# FROM nvidia/cuda:12.5.1-cudnn-devel-ubuntu20.04
+FROM nvidia/cuda:11.2.2-devel-ubuntu20.04
 
 # Устанавливаем переменную окружения для предотвращения интерактивного ввода
 ENV DEBIAN_FRONTEND=noninteractive

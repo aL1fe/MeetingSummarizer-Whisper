@@ -1,12 +1,19 @@
 version: '3.8'
-name: whisper
+name: meeting_summarizer
 services:
-  rabbitmq:
+  whisper:
     container_name: whisper
     image: al1fe/whisper
     restart: unless-stopped
     ports:
       - 8005:8005
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
     # environment:
       # RABBITMQ_DEFAULT_USER: $LOGIN
       # RABBITMQ_DEFAULT_PASS: $PASSWORD
